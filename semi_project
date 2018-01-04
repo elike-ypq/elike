@@ -1,0 +1,107 @@
+(sde:clear)
+;*****************************setting parameters***************************************
+
+(define pt 0.1)  ;um the thickness of poly
+;(define pw 26.8) ;um the width of ploy
+;(define pl 4) ;um the length of transition channel
+;(define phosize 12) ;12um*12um size photo sensor area
+;(define oxide_w 12) ;
+;(define oxide_l 32) ;
+;(define oxide_t1 0.09) ;
+;(define oxide_t2 0.07) ;Si3N4
+;(define active_t 0.5)  ;the thickness of active region
+(define Nd 1e19) 	;
+;(define W 26.8) ;
+;(define L 56)   ;
+;(define T 12.5) ;
+;(define channel_t 0.5) ;
+(define Nc 2.6e16) ;
+;(define subs_t1 10)  ;
+(define Na1 5.0e14)  ;
+(define Na2 5.0e19)  ;
+;(define subs_t2 2)  ;
+;(define tox 1.0)   ;um
+
+(sdegeo:set-default-boolean "ABA")
+;******************************************************************
+; Creating cuboid regions
+(sdegeo:create-cuboid (position -30 -13.4 0) (position 30 13.4 -10.5) "Silicon" "SubsSilicon1")
+(sdegeo:create-cuboid (position -30 -13.4 -10.5) (position 30 13.4 -12.5) "Silicon" "SubsSilicon2")
+(sdegeo:create-cuboid (position -28 -6 0) (position 28 6 -0.5) "Silicon" "N_buried_channel")
+(sdegeo:create-cuboid (position -28 -13.4 0) (position 28 -6 -1) "Oxide" "FieldOxide_right")
+(sdegeo:create-cuboid (position -28 6 0) (position 28 13.4 -1) "Oxide" "FieldOxide_left")
+(sdegeo:create-cuboid (position -28 -13.4 0) (position 28 13.4 0.09) "Oxide" "GateOxide")
+(sdegeo:create-cuboid (position -16 -13.4 0.09) (position 16 13.4 0.16) "Si3N4" "GateSiN")
+(sdegeo:create-cuboid (position -2 -13.4 0.16) (position 2 13.4 pt) "PolySi" "PolyGate3")
+(sdegeo:create-cuboid (position -8 -13.4 0.16) (position -4 13.4 pt) "PolySi" "PolyGate2")
+(sdegeo:create-cuboid (position -14 -13.4 0.16) (position -10 13.4 pt) "PolySi" "PolyGate1")
+(sdegeo:create-cuboid (position 4 -13.4 0.16) (position 8 13.4 pt) "PolySi" "PolyGate4")
+(sdegeo:create-cuboid (position 10 -13.4 0.16) (position 14 13.4 pt) "PolySi" "PolyGate5")
+; Contact definitions
+(sdegeo:define-contact-set "gate1"      4.0  (color:rgb 1.0 0.0 0.0 ) "##" )
+(sdegeo:define-contact-set "gate2"      4.0  (color:rgb 1.0 0.0 0.0 ) "##" )
+(sdegeo:define-contact-set "gate3"      4.0  (color:rgb 1.0 0.0 0.0 ) "##" )
+(sdegeo:define-contact-set "gate4"      4.0  (color:rgb 1.0 0.0 0.0 ) "##" )
+(sdegeo:define-contact-set "gate5"      4.0  (color:rgb 1.0 0.0 0.0 ) "##" )
+(sdegeo:define-contact-set "drain"     4.0  (color:rgb 1.0 0.0 0.0 ) "||" )
+;(sdegeo:define-contact-set "source"    4.0  (color:rgb 1.0 0.0 0.0 ) "==" )
+(sdegeo:define-contact-set "substrate" 4.0  (color:rgb 1.0 0.0 0.0 ) "<><>" )
+
+; Contact assignments
+(sdegeo:set-current-contact-set "substrate")
+(sdegeo:set-contact-faces (find-face-id (position 0 0 -12.5) ) "substrate")
+
+(sdegeo:set-current-contact-set "gate1")
+(sdegeo:set-contact-faces (find-face-id (position -12 0 pt)) "gate1")
+(sdegeo:set-current-contact-set "gate2")
+(sdegeo:set-contact-faces (find-face-id (position -6 0 pt)) "gate2")
+(sdegeo:set-current-contact-set "gate3")
+(sdegeo:set-contact-faces (find-face-id (position 0 0 pt)) "gate3")
+(sdegeo:set-current-contact-set "gate4")
+(sdegeo:set-contact-faces (find-face-id (position 6 0 pt)) "gate4")
+(sdegeo:set-current-contact-set "gate5")
+(sdegeo:set-contact-faces (find-face-id (position 12 0 pt)) "gate5")
+
+;(sdegeo:create-cuboid (position -0.25 -0.1 0) (position -0.17  0.1 0.05) "Metal" "Source")
+(sdegeo:create-cuboid (position  19  -3 0) (position  25 3 0.1)  "Metal" "Drain")
+
+(sdegeo:set-current-contact-set "drain")
+(sdegeo:set-contact-faces (find-face-id (position  22 0 0)) "drain")
+; Constant doping profile definions
+(sdedr:define-constant-profile "Const.Bulk1" "BoronActiveConcentration" Na1)
+(sdedr:define-constant-profile-region "PlaceCD1.Bulk" "Const.Bulk1" "SubsSilicon1")
+(sdedr:define-constant-profile "Const.Bulk2" "BoronActiveConcentration" Na2)
+(sdedr:define-constant-profile-region "PlaceCD2.Buld" "Const.Bulk2" "SubsSilicon2")
+
+(sdedr:define-constant-profile "Const.Channel" "ArsenicActiveConcentration" Nc)
+(sdedr:define-constant-profile-region "PlaceCD1.Poly" "Const.Channel" "N_buried_channel")
+(sdedr:define-constant-profile "Const.Poly" "ArsenicActiveConcentration" 1e20)
+(sdedr:define-constant-profile-region "PlaceCD1.Poly" "Const.Poly" "PolyGate1")
+(sdedr:define-constant-profile-region "PlaceCD2.Poly" "Const.Poly" "PolyGate2")
+(sdedr:define-constant-profile-region "PlaceCD3.Poly" "Const.Poly" "PolyGate3")
+(sdedr:define-constant-profile-region "PlaceCD4.Poly" "Const.Poly" "PolyGate4")
+(sdedr:define-constant-profile-region "PlaceCD5.Poly" "Const.Poly" "PolyGate5")
+
+; Analytic doping profile definions
+(sdedr:define-refinement-window "BaseLine.Source" "Rectangle"
+ (position -28 -6 0.0)  (position -14 6 0.0) )
+
+(sdedr:define-refinement-window "BaseLine.Drain" "Rectangle"
+ (position 14 -6 0.0)  (position 28 6 0.0) )
+
+(sdedr:define-gaussian-profile "Gauss.SourceDrain"
+  "ArsenicActiveConcentration" "PeakPos" 0.0 "PeakVal" Nd
+  "ValueAtDepth" 1e17 "Depth" 0.1 "Gauss" "Factor" 0.8)
+
+(sdedr:define-analytical-profile-placement "PlaceAP.Source"
+ "Gauss.SourceDrain" "BaseLine.Source" "Both" "NoReplace" "Eval")
+
+(sdedr:define-analytical-profile-placement "PlaceAP.Drain"
+ "Gauss.SourceDrain" "BaseLine.Drain" "Both" "NoReplace" "Eval")
+
+
+; Saving structure
+;(sde:save-model "CCD3d_sde")
+
+; Meshing structure 
+(sde:build-mesh "snmesh" "" "n@node@_CCD3d")

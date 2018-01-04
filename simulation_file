@@ -1,0 +1,153 @@
+#setdep @node|sde@
+
+File {
+*-Input		
+	Grid=      "@tdr@"
+	Parameter= "@parameter@"
+*-Output	
+	Current=   "@plot@"
+	Plot=      "@tdrdat@"
+	Output=    "@log@"
+}
+
+Electrode {
+	{ Name= "anode"  Voltage= 0 }
+	{ Name= "cathode"  Voltage= 0 }
+}
+
+RayTraceBC {
+	{ Name= "anode"
+		Reflectivity= 1.0
+	}
+	{ Name= "cathode"
+		Reflectivity= 1.0
+	}
+	
+	{ Name= "RTBCleftContact"
+		Reflectivity= 1.0
+	}
+	{ Name= "RTBCrightContact"
+		Reflectivity= 1.0
+	}		
+}
+
+Physics	{	
+	AreaFactor= @areafactor@	# Device width in z-direction
+	Temperature = @temp@	
+	Thermionic
+	HeteroInterfaces	 
+	Mobility(HighFieldSaturation)
+	EffectiveIntrinsicDensity(NoFermi) 
+	Recombination(SRH Auger)
+	Optics (
+    	ComplexRefractiveIndex (WavelengthDep(Real Imag))
+		OpticalGeneration (
+			QuantumYield (StepFunction (EffectiveBandgap)) * number of generated carriers per photon, default: 1
+			ComputeFromMonochromaticSource
+		) * end OpticalGeneration
+		Excitation (
+			Wavelength= @wstart@  			* Incident light wavelength [um]
+			Intensity= @signalIntensity@  	* Incident light intensity [W/cm2]		
+			Polarization= 0.5				* Unpolarized light
+			Theta= 180						* Normal incidence,	in -ve y direction
+			Window(
+				Origin= (0, 0.1)			* Shift origin 0.1 um below the bottom photodiode surface
+				Line(x1= 0 x2= @wtot@)		* Illumination window covers width of photodiode. 
+			)
+		) * end Excitation
+		OpticalSolver (
+      		RayTracing (	        		
+				RayDistribution(
+					Mode= AutoPopulate
+					NumberOfRays= 300				* Number of rays in the illumination window
+				)
+				CompactMemoryOption
+				DepthLimit= 1000 						* Stop tracing a ray after passing through more than x material boundaries
+				MinIntensity= 1e-5					* Stop tracing a ray when its intensity becomes less than x times the original intensity
+				PlotInterfaceFlux
+			) * end RayTracing
+		)	* end OpticalSolver		
+	) * end Optics		
+}
+
+Physics(RegionInterface="top_air/topAir") {
+	RayTraceBC (Reflectivity = 0 Transmittivity = 0)
+}
+Physics(RegionInterface="bottom_air/bottomAir") {
+	RayTraceBC (Reflectivity = 0 Transmittivity = 0)
+}
+
+Plot {    
+  *- Doping and mole fraction profiles	
+	Doping DonorConcentration AcceptorConcentration	
+	xMoleFraction
+*- Band structure
+	BandGap BandGapNarrowing ElectronAffinity
+	ConductionBandEnergy ValenceBandEnergy
+	eQuasiFermiEnergy hQuasiFermiEnergy		
+*- Carrier Densities:
+  	eDensity hDensity
+	EffectiveIntrinsicDensity IntrinsicDensity
+	eEquilibriumDensity hEquilibriumDensity
+*- Fields, Potentials and Charge distributions
+	ElectricField/Vector
+	Potential
+	SpaceCharge	
+*- Currents	
+	Current/Vector eCurrent/Vector  hCurrent/Vector
+  	CurrentPotential	* for visualizing current lines
+  	eMobility hMobility
+	eVelocity hVelocity
+*- Generation/Recombination	
+  	SRHRecombination AugerRecombination TotalRecombination SurfaceRecombination Band2Band RadiativeRecombination
+  	eLifeTime hLifeTime
+*- Optical Generation	
+    ComplexRefractiveIndex QuantumYield
+	OpticalIntensity AbsorbedPhotonDensity OpticalGeneration
+* Visualizing raytracing. Can be time consuming to plot.  
+* RayTree cannot be  plotted if CompactMemoryOption is specified in Physics section. 	
+*  	RayTrees
+
+}	
+
+*--------------------------------------------------
+CurrentPlot {
+	ModelParameter= "Wavelength"	
+	OpticalGeneration(Integrate(Semiconductor) ) 
+	AbsorbedPhotonDensity(Integrate(Semiconductor) ) 
+}
+
+Math {
+	Extrapolate
+	RelErrcontrol
+	Digits= 5
+	Notdamped= 20
+	Iterations= 12
+	ElementEdgeCurrent
+	ErrRef(electron)= 1e3
+	ErrRef(hole)= 1e3			
+	CurrentPlot (IntegrationUnit= cm)	
+	eMobilityAveraging= ElementEdge
+	* uses edge mobility instead of element one for electron mobility	
+	hMobilityAveraging= ElementEdge   
+	* uses edge mobility instead of element one for hole mobility
+	GeometricDistances 		         
+	* when needed, compute distance to the interface instead of closest point on the interface
+	ParameterInheritance= Flatten 	  
+	* regions inherit parameters from materials  	   
+}
+
+Solve{
+	NewCurrentPrefix= "init"
+	Poisson
+	# ramp wavelength from wstart to wend
+	NewCurrentPrefix= "" 
+	Quasistationary ( 
+		InitialStep= @<1./@wsteps@>@ 
+		MinStep= @<1./@wsteps@>@     MaxStep= @<1./@wsteps@>@
+		Goal { ModelParameter= "Wavelength" Value= @wend@ }
+		Plot {Range = (0 1) Intervals= 3}
+	){ Coupled { Poisson Electron Hole } }
+	
+	System("rm -f init*") *remove the plot we don't need anymore.       
+}

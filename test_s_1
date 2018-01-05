@@ -1,0 +1,99 @@
+#setdep @node|sde@
+
+File {
+*-Input		
+	Grid=      "@tdr@"
+*-Output	
+	Current=   "@plot@"
+	Plot=      "@tdrdat@"
+	Output=    "@log@"
+}
+
+Electrode {
+	{ Name= "substrate" Voltage = 0}
+	{ Name= "gate1"  Voltage= 0 }
+	{ Name= "gate2"  Voltage= 0 }
+	{ Name= "gate3"  Voltage= 0 }
+	{ Name= "gate4"  Voltage= 0 }
+	{ Name= "gate5"  Voltage= 0 }
+	{ Name= "anode"  Voltage= 0 }
+	{ Name= "cathode" Voltage= 0 }
+}
+
+Physics	{	
+	AreaFactor= 1	# Device width in z-direction
+	Temperature = 300	
+	Thermionic
+	HeteroInterfaces	 
+	Mobility(
+		DopingDependence
+		eHighFieldSaturation
+		hHighFieldSaturation
+		Enormal
+		CarrierCarrierScattering
+		)
+	EffectiveIntrinsicDensity(OldSlotboom) 
+	Recombination(
+		SRH(DopingDependence)
+		Auger(withGeneration)
+		Avalanche(UniBo Eparallel)
+		Band2Band(Hurkx)
+		)
+}
+Math {
+         #Cylindrical
+	
+         Method=Pardiso
+         Number_of_threads = 4
+         Stacksize=200000000
+	
+         Extrapolate
+         Derivatives
+         AvalDerivatives
+         RelErrControl
+	
+         Iterations=20
+         Notdamped=60
+
+         BreakCriteria {
+               Current (Contact = "anode" maxval = 1e-8)
+               }
+}
+Plot {
+            eDensity hDensity
+            eCurrent/Vector hCurrent/Vector
+            Current/Vector
+            Potential
+            ElectricField/Vector
+            SpaceCharge
+            eMobility hMobility
+            eVelocity hVelocity
+            DopingConcentration
+            DonorConcentration AcceptorConcentration
+            srhRecombination AugerRecombination
+            AvalancheGeneration
+            eAvalanche hAvalanche
+            TotalRecombination
+}
+Solve {
+               Coupled (Iterations=50) {Poisson}
+               Coupled (Iterations=15) {Hole Poisson}
+               Coupled (Iterations=15) {Electron Hole Poisson}
+	
+               QuasiStationary (
+	 InitialStep = 1e-6
+	 MaxStep = 0.1
+	 MinStep = 1e-10
+	 Goal {Name="anode" Voltage=10}
+	 Plot {Range = (0 1) Intervals=2}
+	) 
+	{
+	Coupled {Hole Electron Poisson}
+	Plot (
+	          FilePrefix="IV_" 
+	          Time=(0.01; 0.05; 0.1; 0.5)
+	           NoOverwrite
+	           )
+	}
+}
+

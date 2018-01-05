@@ -111,25 +111,24 @@ CurrentPlot {
 }
 
 Math {
-	Extrapolate
-	RelErrcontrol
-	Digits= 5
-	Notdamped= 20
-	Iterations= 12
-	ElementEdgeCurrent
-	ErrRef(electron)= 1e3
-	ErrRef(hole)= 1e3			
-	CurrentPlot (IntegrationUnit= cm)	
-	eMobilityAveraging= ElementEdge
-	* uses edge mobility instead of element one for electron mobility	
-	hMobilityAveraging= ElementEdge   
-	* uses edge mobility instead of element one for hole mobility
-	GeometricDistances 		         
-	* when needed, compute distance to the interface instead of closest point on the interface
-	ParameterInheritance= Flatten 	  
-	* regions inherit parameters from materials  	   
-}
+         #Cylindrical
+	
+         Method=Pardiso
+         Number_of_threads = 4
+         Stacksize=200000000
+	
+         Extrapolate
+         Derivatives
+         AvalDerivatives
+         RelErrControl
+	
+         Iterations=15
+         Notdamped=60
 
+         BreakCriteria {
+               Current (Contact = "ElectrodeN" maxval = 1e-8)
+               }
+}
 Solve{
 	Coupled(Iterations=50){Poisson}
 	Coupled(Iterations=15){Hole Poisson}
@@ -141,5 +140,7 @@ Solve{
 		MinStep=1e-17
 		MaxStep=1e-10
 		){Coupled{Poisson Electron Hole Circuit}
+		Plot (FilePrefix="TransHI_" Time=(0.5e-9; 1e-9; 2e-9; 5e-9; 10e-9) NoOverwrite)
+
 	}
 }

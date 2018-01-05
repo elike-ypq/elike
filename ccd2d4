@@ -1,0 +1,128 @@
+#if 0
+Pending list
+Formatting of commands
+Convert old commands to new ones
+#endif
+
+;*****************************setting parameters***************************************
+
+(define pt 0.5)  ;um the thickness of poly
+;(define pw 26.8) ;um the width of ploy
+;(define pl 4) ;um the length of transition channel
+;(define phosize 12) ;12um*12um size photo sensor area
+;(define oxide_w 12) ;um
+;(define oxide_l 32) ;um
+;(define oxide_t1 0.09) ;um
+;(define oxide_t2 0.07) ;Si3N4
+;(define active_t 0.5)  ;the thickness of active region
+(define Nd 1e19)        ;
+;(define W 26.8) ;um
+;(define L 56)   ;um
+;(define T 12.5) ;um
+;(define channel_t 0.5) ;um
+(define Nc 2.6e16) ;
+;(define subs_t1 10)  ;um
+(define Na1 5.0e14)  ;
+(define Na2 5.0e19)  ;
+;(define subs_t2 2)  ;um
+;(define tox 1) ;um
+
+;; Device width in x-direction: Used in S-Visual nodes
+#set wtot 60
+;; Device width in z-direction: Used in S-Device and S-Visual nodes
+#set areafactor 0.1	
+(sdegeo:set-default-boolean "ABA")
+;(sdegeo:create-rectangle (position 0 0 0.0 )  (position 60 -6 0.0 ) "HgCdTe" "pMW" )
+;(sdegeo:create-rectangle (position 10 -4.5 0.0 )  (position 35 -6 0.0 ) "HgCdTe" "nMW" )
+;(sdegeo:create-rectangle (position 21 -5.2 0.0 )  (position 24 -6 0.0 ) "Gold" "nelectrode" )
+;(sdegeo:create-rectangle (position 45 -5.2 0.0 )  (position 49 -6 0.0 ) "Gold" "pelectrode" )
+; Creating cuboid regions
+(sdegeo:create-rectangle (position -30 0 0) (position 30 -10.5 0) "Silicon" "SubsSilicon1")
+(sdegeo:create-rectangle (position -30 -10.5 0) (position 30 -12.5 0) "Silicon" "SubsSilicon2")
+(sdegeo:create-rectangle (position -28 0 0) (position 28 -0.5 0) "Silicon" "N_buried_channel")
+(sdegeo:create-rectangle (position -16 0 0) (position 16 0.09 0) "Oxide" "GateOxide")
+(sdegeo:create-rectangle (position -16 0.09 0) (position 16 0.16 0) "Si3N4" "GateSiN")
+(sdegeo:create-rectangle (position -2 0.16 0) (position 2 pt 0) "PolySi" "PolyGate3")
+(sdegeo:create-rectangle (position -8 0.16 0) (position -4 pt 0) "PolySi" "PolyGate2")
+(sdegeo:create-rectangle (position -14 0.16 0) (position -10 pt 0) "PolySi" "PolyGate1")
+(sdegeo:create-rectangle (position 4 0.16 0) (position 8 pt 0) "PolySi" "PolyGate4")
+(sdegeo:create-rectangle (position 10 0.16 0) (position 14 pt 0) "PolySi" "PolyGate5")
+(sdegeo:create-rectangle (position -24 0 0.0 )  (position -20 0.5 0.0 ) "Gold" "nelectrode" )
+(sdegeo:create-rectangle (position 20 0 0.0 )  (position 24 +0.5 0.0 ) "Gold" "pelectrode" )
+(sdegeo:define-contact-set "anode" 4  (color:rgb 1 0 0 ) "##" )
+;(sdegeo:define-contact-set "cathode" 4  (color:rgb 0 1 0 ) "##" )
+; Contact definitions
+(sdegeo:define-contact-set "gate1"      4.0  (color:rgb 1.0 0.0 0.0 ) "##" )
+(sdegeo:define-contact-set "gate2"      4.0  (color:rgb 1.0 0.0 0.0 ) "##" )
+(sdegeo:define-contact-set "gate3"      4.0  (color:rgb 1.0 0.0 0.0 ) "##" )
+(sdegeo:define-contact-set "gate4"      4.0  (color:rgb 1.0 0.0 0.0 ) "##" )
+(sdegeo:define-contact-set "gate5"      4.0  (color:rgb 1.0 0.0 0.0 ) "##" )
+(sdegeo:define-contact-set "cathode"     4.0  (color:rgb 1.0 0.0 0.0 ) "||" )
+(sdegeo:define-contact-set "anode"    4.0  (color:rgb 1.0 0.0 0.0 ) "==" )
+(sdegeo:define-contact-set "substrate" 4.0  (color:rgb 1.0 0.0 0.0 ) "<><>" )
+; Contact assignments
+(sdegeo:set-current-contact-set "substrate")
+(sdegeo:set-contact-boundary-edges (list (car (find-body-id (position 0 -12 0)))) "substrate")
+
+(sdegeo:set-current-contact-set "gate1")
+(sdegeo:set-contact-boundary-edges (list (car (find-body-id (position -12 pt 0)))) "gate1")
+(sdegeo:set-current-contact-set "gate2")
+(sdegeo:set-contact-boundary-edges (list (car (find-body-id (position -6 pt 0)))) "gate2")
+(sdegeo:set-current-contact-set "gate3")
+(sdegeo:set-contact-boundary-edges (list (car (find-body-id (position 0 pt 0)))) "gate3")
+(sdegeo:set-current-contact-set "gate4")
+(sdegeo:set-contact-boundary-edges (list (car (find-body-id (position 6 pt 0)))) "gate4")
+(sdegeo:set-current-contact-set "gate5")
+(sdegeo:set-contact-boundary-edges (list (car (find-body-id (position 12 pt 0)))) "gate5")
+
+(sdegeo:set-current-contact-set "anode")
+(sdegeo:set-contact-boundary-edges (list (car (find-body-id (position -22 0.25 0.0)))) "anode")
+(sdegeo:delete-region (find-region-id "nelectrode"))
+
+(sdegeo:set-current-contact-set "cathode")
+(sdegeo:set-contact-boundary-edges (list (car (find-body-id (position +22 +0.25 0.0)))) "cathode")
+(sdegeo:delete-region (find-region-id "pelectrode"))
+(sdegeo:set-default-boolean "BAB")
+
+; Constant doping profile definions
+(sdedr:define-constant-profile "Const.Bulk1" "BoronActiveConcentration" Na1)
+(sdedr:define-constant-profile-region "PlaceCD1.Bulk" "Const.Bulk1" "SubsSilicon1")
+(sdedr:define-constant-profile "Const.Bulk2" "BoronActiveConcentration" Na2)
+(sdedr:define-constant-profile-region "PlaceCD2.Buld" "Const.Bulk2" "SubsSilicon2")
+
+(sdedr:define-constant-profile "Const.Channel" "ArsenicActiveConcentration" Nc)
+(sdedr:define-constant-profile-region "PlaceCD1.Poly" "Const.Channel" "N_buried_channel")
+(sdedr:define-constant-profile "Const.Poly" "ArsenicActiveConcentration" 1e20)
+(sdedr:define-constant-profile-region "PlaceCD1.Poly" "Const.Poly" "PolyGate1")
+(sdedr:define-constant-profile-region "PlaceCD2.Poly" "Const.Poly" "PolyGate2")
+(sdedr:define-constant-profile-region "PlaceCD3.Poly" "Const.Poly" "PolyGate3")
+(sdedr:define-constant-profile-region "PlaceCD4.Poly" "Const.Poly" "PolyGate4")
+(sdedr:define-constant-profile-region "PlaceCD5.Poly" "Const.Poly" "PolyGate5")
+
+; Analytic doping profile definions
+(sdedr:define-refinement-window "BaseLine.Source" "Rectangle" (position -28 -0.5 0.0)  (position -14 0 0.0) )
+(sdedr:define-refinement-window "BaseLine.Drain" "Rectangle" (position 14 -0.5 0.0)  (position 28 0 0.0) )
+
+(sdedr:define-gaussian-profile "Gauss.SourceDrain" "ArsenicActiveConcentration" "PeakPos" 0.0 "PeakVal" Nd
+ "ValueAtDepth" 1e17 "Depth" 0.5 "Gauss" "Factor" 0.8)
+(sdedr:define-analytical-profile-placement "PlaceAP.Source" "Gauss.SourceDrain" "BaseLine.Source" "Both" "NoReplace" "Eval")
+(sdedr:define-analytical-profile-placement "PlaceAP.Drain" "Gauss.SourceDrain" "BaseLine.Drain" "Both" "NoReplace" "Eval")
+
+; Meshing strategies
+(sdedr:define-refinement-window "RefWin.Global" "Rectangle"  (position -30 -12.5 0) (position 30 2 0))
+(sdedr:define-refinement-size "RefDef.Global" 1  1  0.5 0.5 )
+(sdedr:define-refinement-placement "Place.Global" "RefDef.Global" "RefWin.Global" )
+(sdedr:define-refinement-window "RefWin.Active" "Rectangle" (position -30 -0.1 0) (position 30 0.0 0))
+(sdedr:define-refinement-size "RefDef.Active" 0.05  0.05 0.025 0.025 )
+(sdedr:define-refinement-placement "Place.Active" "RefDef.Active" "RefWin.Active")
+; Multiboxes
+(sdedr:define-refinement-window "RefWin.Channel" "rectangle" (position -30 -0.5 0) (position 30 0 0))
+(sdedr:define-multibox-size "RefDefMB.Channel" 0.2  0.02 0.1 0.01  1.2 1.5 )
+(sdedr:define-multibox-placement "PlaceMB.Channel" "RefDefMB.Channel" "RefWin.Channel" )
+
+; Saving structure
+;(sde:save-model "CCD2d_sde")
+
+;----------------------------------------------------------------------
+; Build Mesh 
+(sde:build-mesh "snmesh" " " "n@node@_msh")

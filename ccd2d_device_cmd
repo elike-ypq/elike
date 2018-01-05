@@ -1,0 +1,145 @@
+#setdep @node|sde@
+
+File {
+*-Input		
+	Grid=      "@tdr@"
+	Parameter= "@parameter@"
+*-Output	
+	Current=   "@plot@"
+	Plot=      "@tdrdat@"
+	Output=    "@log@"
+}
+
+Electrode {
+	{ Name= "substrate" Voltage = 0}
+	{ Name= "gate1"  Voltage= 0 }
+	{ Name= "gate2"  Voltage= 0 }
+	{ Name= "gate3"  Voltage= 0 }
+	{ Name= "gate4"  Voltage= 0 }
+	{ Name= "gate5"  Voltage= 0 }
+	{ Name= "cout"  Voltage= 0 }
+}
+
+Physics	{	
+	AreaFactor= @areafactor@	# Device width in z-direction
+	Temperature = 300	
+	Thermionic
+	HeteroInterfaces	 
+	Mobility(
+		DopingDependence
+		eHighFieldSaturation
+		hHighFieldSaturation
+		Enormal
+		CarrierCarrierScattering
+		)
+	EffectiveIntrinsicDensity(OldSlotboom) 
+	Recombination(
+		SRH(DopingDependence)
+		Auger(withGeneration)
+		Avalanche(UniBo Eparallel)
+		Band2Band(Hurkx)
+		)
+	Optics (
+		OpticalGeneration (
+			ComputeFromMonochromaticSource()
+				TimeDependence(
+					WaveTime=(1e-9 1e-9)
+					WaveTSigma=50e-12
+					)
+				Scaling=0
+				)
+		Excitation (
+			Wavelength= 0.8  			* Incident light wavelength [um]
+			Intensity= 0.06  	* Incident light intensity [W/cm2]		
+			Window("L1")(
+				Origin= (-22, 0)			* Shift origin 0.1 um below the bottom photodiode surface
+				XDirection=(1,0,0)
+				Line(Dx=10)		* Illumination window covers width of photodiode. 
+			)
+			Theta=0
+		) * end Excitation
+		OpticalSolver (
+      			OptBeam(
+				LayerStackExtraction(
+					WindowName="L1"
+					WindowPosition=Center
+					Mode=ElementWise
+					)
+				)
+			)
+		ComplexRefractiveIndex(WavelengthDep(real imag))	        		
+)
+}
+Plot {    
+  *- Doping and mole fraction profiles	
+	Doping DonorConcentration AcceptorConcentration	
+	xMoleFraction
+*- Band structure
+	BandGap BandGapNarrowing ElectronAffinity
+	ConductionBandEnergy ValenceBandEnergy
+	eQuasiFermiEnergy hQuasiFermiEnergy		
+*- Carrier Densities:
+  	eDensity hDensity
+	EffectiveIntrinsicDensity IntrinsicDensity
+	eEquilibriumDensity hEquilibriumDensity
+*- Fields, Potentials and Charge distributions
+	ElectricField/Vector
+	Potential
+	SpaceCharge	
+*- Currents	
+	Current/Vector eCurrent/Vector  hCurrent/Vector
+  	CurrentPotential	* for visualizing current lines
+  	eMobility hMobility
+	eVelocity hVelocity
+*- Generation/Recombination	
+  	SRHRecombination AugerRecombination TotalRecombination SurfaceRecombination Band2Band RadiativeRecombination
+  	eLifeTime hLifeTime
+*- Optical Generation	
+    ComplexRefractiveIndex QuantumYield
+	OpticalIntensity AbsorbedPhotonDensity OpticalGeneration
+* Visualizing raytracing. Can be time consuming to plot.  
+* RayTree cannot be  plotted if CompactMemoryOption is specified in Physics section. 	
+*  	RayTrees
+
+}	
+
+*--------------------------------------------------
+CurrentPlot {
+	ModelParameter= "Wavelength"	
+	OpticalGeneration(Integrate(Semiconductor) ) 
+	AbsorbedPhotonDensity(Integrate(Semiconductor) ) 
+}
+
+Math {
+	Extrapolate
+	RelErrcontrol
+	Digits= 5
+	Notdamped= 20
+	Iterations= 12
+	ElementEdgeCurrent
+	ErrRef(electron)= 1e3
+	ErrRef(hole)= 1e3			
+	CurrentPlot (IntegrationUnit= cm)	
+	eMobilityAveraging= ElementEdge
+	* uses edge mobility instead of element one for electron mobility	
+	hMobilityAveraging= ElementEdge   
+	* uses edge mobility instead of element one for hole mobility
+	GeometricDistances 		         
+	* when needed, compute distance to the interface instead of closest point on the interface
+	ParameterInheritance= Flatten 	  
+	* regions inherit parameters from materials  	   
+}
+
+Solve{
+	Coupled(Iterations=50){Poisson}
+	Coupled(Iterations=15){Hole Poisson}
+	Coupled(Iterations=15){Electron Hole Poisson}
+	NewCurrentPrefix= "trans_"
+	Transient( 
+		InitialTime= 0
+		FinalTime=60e-9
+		MinStep=1e-17
+		MaxStep=1e-10
+		){Coupled{Poisson Electron Hole Circuit}
+	}
+}

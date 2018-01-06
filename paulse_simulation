@@ -97,11 +97,11 @@ Solve {
 	NewCurrentPrefix = "trans_"
        Transient (
 	InitialTime = 1e-8
-	FinalTime = 30e-8
+	FinalTime = 27.1e-8
 	MinStep = 1e-20
 	MaxStep = 1e-8
 	){Coupled{ Poisson Electron Hole} 
-	Plot (FilePrefix="TransDDC_" Time=(1e-9; 1e-8; 2e-8; 6e-8; 11e-8; 17e-8; 25e-8; 27e-8) NoOverwrite)
+	Plot (FilePrefix="TransDDC_" Time=(1e-9; 1e-8; 1.1e-8; 2.1e-8; 3.1e-8; 4.1e-8; 8.1e-8; 9.1e-8; 10.1e-8; 12.1e-8; 13.1e-8; 14.1e-8; 15.1e-8; 22.1e-8; 23.1e-8; 24.1e-8; 27.1e-8 ) NoOverwrite)
 	}
 
 }

@@ -82,8 +82,13 @@ Plot {
 }
 System { 
   CCD CCD_system (gate1=g1 gate2=g2 gate3=g3 gate4=g4 gate5=g5 anode=a cathode=c substrate=0) 
-  Vsource_pset va  (a 0) { dc=5 }
-  Resistor_pset R_1 (a c){ resistance=1e6}
+  Vsource_pset va (a 0){ pulse(12 0 2e-8 1e-8 1e-8 4e-8 25e-8) }
+  Vsource_pset vg1 (g1 0){ pulse(-5 5 1e-8 1e-8 1e-8 6e-8 25e-8) }
+  Vsource_pset vg2 (g2 0){ pulse(-6 -6 1e-8 1e-8 2e-8 11e-8 25e-8) }
+  Vsource_pset vg3 (g3 0){ pulse(-6 -6 11e-8 1e-8 2e-8 11e-8 25e-8) }
+  Vsource_pset vg4 (g4 0){ pulse(-6 -6 11e-8 1e-8 2e-8 11e-8 25e-8) }
+  Vsource_pset vg5  (a 0) { dc=-5 }
+  Vsource_pset vc (c 0) { dc=12 } 
 } 
 
 Solve {
@@ -91,11 +96,15 @@ Solve {
    Coupled(Iterations= 50){Poisson} 
    Coupled{ Poisson Electron Hole } 
 
-   Quasistationary( 
-      InitialStep= 1e-9 Increment= 1.35 
-      MinStep= 1e-10 MaxStep= 0.1
-      goal{Parameter= va.dc Voltage=10}
-   ){ Coupled { Poisson Electron Hole } }
+ NewCurrentPrefix = "trans_"
+           Transient (
+InitialTime = 0
+	FinalTime = 30e-8
+	MinStep = 1e-11
+	MaxStep = 1e-8
+	){Coupled { Poisson Electron Hole Circuit }
+	Plot (FilePrefix="TransDDC_" Time=(1e-9; 1e-8; 2e-8; 6e-8; 11e-8; 17e-8; 25e-8; 27e-8) NoOverwrite)
+	}
 
 }
 

@@ -1,0 +1,21 @@
+File {
+   Output= "@log@"	
+}
+Math {
+         #Cylindrical
+	
+         Method=Pardiso
+         Number_of_threads = 4
+         Stacksize=200000000
+	
+         Extrapolate
+         Derivatives
+         AvalDerivatives
+         RelErrControl
+	
+         Iterations=15
+         Notdamped=60
+
+}
+system{
+	nmos m0

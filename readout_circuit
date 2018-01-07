@@ -1,0 +1,160 @@
+Dessis CCD {
+*---------------------------------------------------------
+File {
+*-Input		
+	Grid=      "@tdr@"
+	*-Parameters= "@parameter@"
+*-Output	
+	Current=   "@plot@"
+	Plot=      "@tdrdat@"
+}
+
+Electrode {
+	{ Name= "substrate" Voltage = 0}
+	{ Name= "gate1"  Voltage= 0 }
+	{ Name= "gate2"  Voltage= 0 }
+	{ Name= "gate3"  Voltage= 0 }
+	{ Name= "gate4"  Voltage= 0 }
+	{ Name= "gate5"  Voltage= 0 }
+	{ Name= "anode"  Voltage= 0 }
+	{ Name= "cathode" Voltage= 0 }
+}
+
+Physics	{	
+	AreaFactor= @areafactor@	# Device width in z-direction
+	Temperature = 300	
+	Thermionic
+	HeteroInterfaces	 
+	Mobility(
+		DopingDependence
+		eHighFieldSaturation
+		hHighFieldSaturation
+		Enormal
+		CarrierCarrierScattering
+		)
+	EffectiveIntrinsicDensity(OldSlotboom) 
+	Recombination(
+		SRH(DopingDependence)
+		Auger(withGeneration)
+		Avalanche(UniBo Eparallel)
+		Band2Band(Hurkx)
+		)
+	Optics (
+		OpticalGeneration (
+			ComputeFromMonochromaticSource()
+				TimeDependence(
+					WaveTime=(1.2e-8 1e-8)
+					WaveTSigma=50e-11
+					)
+				Scaling=0
+				)
+		Excitation (
+			Wavelength= 0.8  			* Incident light wavelength [um]
+			Intensity= 0.06  	* Incident light intensity [W/cm2]		
+			Window("L1")(
+				Origin= (-22.0, 0.0)			* Shift origin 0.1 um below the bottom photodiode surface
+				XDirection=(1,0,0)
+				Line(Dx=12)		* Illumination window covers width of photodiode. 
+			)
+			Theta=0
+		) * end Excitation
+		OpticalSolver (
+      			OptBeam(
+				LayerStackExtraction(
+					WindowName="L1"
+					WindowPosition=Center
+					Mode=ElementWise
+					)
+				)
+			)
+		ComplexRefractiveIndex(WavelengthDep(real imag))	        		
+)
+}
+
+Plot {    
+  *- Doping and mole fraction profiles	
+	Doping DonorConcentration AcceptorConcentration	
+	xMoleFraction
+*- Band structure
+	BandGap BandGapNarrowing ElectronAffinity
+	ConductionBandEnergy ValenceBandEnergy
+	eQuasiFermiEnergy hQuasiFermiEnergy		
+*- Carrier Densities:
+  	eDensity hDensity
+	EffectiveIntrinsicDensity IntrinsicDensity
+	eEquilibriumDensity hEquilibriumDensity
+*- Fields, Potentials and Charge distributions
+	ElectricField/Vector
+	Potential
+	SpaceCharge	
+*- Currents	
+	Current/Vector eCurrent/Vector  hCurrent/Vector
+  	CurrentPotential	* for visualizing current lines
+  	eMobility hMobility
+	eVelocity hVelocity
+*- Generation/Recombination	
+  	SRHRecombination AugerRecombination TotalRecombination SurfaceRecombination Band2Band RadiativeRecombination
+  	eLifeTime hLifeTime
+*- Optical Generation	
+    ComplexRefractiveIndex QuantumYield
+	OpticalIntensity AbsorbedPhotonDensity OpticalGeneration
+* Visualizing raytracing. Can be time consuming to plot.  
+* RayTree cannot be  plotted if CompactMemoryOption is specified in Physics section. 	
+*  	RayTrees
+
+}	
+
+*--------------------------------------------------
+CurrentPlot {
+	ModelParameter= "Wavelength"	
+	OpticalGeneration(Integrate(Semiconductor) ) 
+	AbsorbedPhotonDensity(Integrate(Semiconductor) ) 
+}
+}
+File {
+   Output= "@log@"	
+}
+Math {
+         #Cylindrical
+	
+         Method=Pardiso
+         Number_of_threads = 4
+         Stacksize=200000000
+	
+         Extrapolate
+         Derivatives
+         AvalDerivatives
+         RelErrControl
+	
+         Iterations=15
+         Notdamped=60
+
+}
+System { 
+  CCD CCD_system (gate1=g1 gate2=g2 gate3=g3 gate4=g4 gate5=g5 anode=a cathode=c substrate=0)
+  Vsource_pset va (a 0){ pwl=(0 0 1e-8 0 1.1e8 12 3.1e-8 12 4.1e-8 0 8.1e-8 0 9.1e-8 12 28.1e-8 12) }
+  Vsource_pset vg1 (g1 0){ pwl=(0 0 1e-8 0 1.1e-8 -5 2.1e-8 -5 3.1e-8 5 9.1e-8 5 10.1e-8 -5 27.1e-8 -5) }
+  Vsource_pset vg2 (g2 0){ pwl=(0 0 1e-8 0 1.1e-8 -6 2.1e-8 -6 3.1e-8 6 14.1e-8 6 15.1e-8 -6 27.1e-8 -6) }
+  Vsource_pset vg3 (g3 0){ pwl=(0 0 1e-8 0 1.1e-8 -6 12.1e-8 -6 13.1e-8 6 24.1e-8 6 26.1e-8 -6 37.1e-8 -6) }
+  Vsource_pset vg4 (g4 0){ pwl=(0 0 1e-8 0 1.1e-8 -6 22.1e-8 -6 23.1e-8 6 34.1e-8 6 36.1e-8 -6 47.1e-8 -6) }
+  Vsource_pset vg5 (g5 0){ pwl=(0 0 1e-8 0 1.1e-8 -5 40e-8 -5) }
+  Vsource_pset vc (c 0) { pwl=(0 0 1e-8 0 1.1e-8 12 40e-8 12) }
+  
+  Plot "n@node@_1" (time() v(a) v(g1) v(g2) v(g3) v(g4) v(g5) v(c))
+  
+} 
+
+Solve {
+	Poisson
+   Coupled{ Poisson Electron Hole} 
+	NewCurrentPrefix = "trans_"
+       Transient (
+	InitialTime = 1e-8
+	FinalTime = 27.1e-8
+	MinStep = 1e-20
+	MaxStep = 1e-8
+	){Coupled{ Poisson Electron Hole} 
+	Plot (FilePrefix="TransDDC_" Time=(1e-9; 1e-8; 1.1e-8; 2.1e-8; 3.1e-8; 4.1e-8; 8.1e-8; 9.1e-8; 10.1e-8; 12.1e-8; 13.1e-8; 14.1e-8; 15.1e-8; 22.1e-8; 23.1e-8; 24.1e-8; 27.1e-8 ) NoOverwrite)
+	}
+
+}
